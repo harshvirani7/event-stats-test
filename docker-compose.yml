@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  event-stats-test:
+    build: .
+    ports:
+      - "8080:8080"
