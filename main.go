@@ -1,28 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Define the HTTP handler function for your API endpoint
-	http.HandleFunc("/api/basic-text", func(w http.ResponseWriter, r *http.Request) {
-		// Set the content type header
-		w.Header().Set("Content-Type", "text/plain")
+	// Create a new Gin router
+	router := gin.Default()
+
+	// Define a route for the API endpoint
+	router.GET("/api/basic-text", func(c *gin.Context) {
+		// Set the response status code and content type
+		c.Status(http.StatusOK)
+		c.Header("Content-Type", "text/plain")
 
 		// Write the response body
-		fmt.Fprintf(w, "This is some basic text returned by the API.")
+		c.String(http.StatusOK, "This is some basic text returned by the API.")
 	})
 
-	// Start the HTTP server
-	fmt.Println("Server started on port 8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		fmt.Println("Failed to start server:", err)
-	}
+	// Run the server
+	router.Run(":8080")
 }
 
-// use gin
 // get data from pulsar and modify and store in redis
 
 // query param - event type - return total event count

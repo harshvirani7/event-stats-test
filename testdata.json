@@ -1,0 +1,52 @@
+{
+    "unique": "thumbnail_$$ESN$$_$$TIMESTAMP$$_$$EVENTID$$",
+    "info": {
+        "image": {
+            "low_resolution": { "mimetype": "image/jpeg", "resolution": { "x": 640.0, "y": 800 }, "framing": { "axis": { "pan": 0, "tilt": 0}, "fov": { "x": 40, "y": 22.5}}, "url": "$$IMAGE_URL" },
+            "high_resolution": { "mimetype": "image/jpeg", "resolution": { "x": 1920, "y": 1080 }, "framing": { "axis": { "pan": 0, "tilt": 0}, "fov": { "x": 40, "y": 22.5}}, "url": "http://$$ESN$$.a.plumv.com:28080/image.jpg?id=$$ESN$$&$$TIMESTAMP$$=20210326121212.000" }
+        },
+        "event": {
+            "event": "$$EVENT$$",
+            "eventType": "$$EVENTTYPE$$",
+            "eventInfo": {"$$EVENTTYPE$$":{"event":"in", "objectid":"7dd31de4-7ea2-47e2-8dd5-ff9c54bbe4eb", "triggerid":"20220119173051.513"}, "ns":101},
+            "accountid" : "",
+            "cameraid": "$$ESN$$",
+            "timestamp": "$$TIMESTAMP$$",
+            "eventid": "$$EVENTID$$"
+        },
+        "settings": {
+            "customAI": {"enable":false},
+            "cloudLPR": {},
+            "cloudInference": true
+        }
+    },
+    "workflow": {
+        "workFlowId": "$$ID$$",
+        "currentWorker": "dedup",
+        "currentPath": [ ],
+        "workers": {
+            "archive": {
+                "topic": "archive$$TOPIC-SUFFIX$$",
+                "emits": []
+            },
+            "dedup": {
+                "topic": "",
+                "emits": [
+                    { "filter": { "op": "isTrue", "key": "info.settings.cloudInference"}, "worker": "inference" },
+                    { "filter": { "op": "always", "include": { "workSequence": 0}}, "worker": "archive" }
+                ]
+            },
+            "inference": {
+                "topic": "inference$$TOPIC-SUFFIX$$",
+                "emits": [
+                    { "filter": { "op": "isFalse", "key": "info.settings.customAI.enable", "include": { "workSequence": 1}}, "worker": "archive" },
+                    { "filter": { "op": "isFalse", "key": "info.settings.customAI.enable"}, "worker": "store" }
+                ]
+            },
+            "store": {
+                "topic": "store$$TOPIC-SUFFIX$$",
+                "emits": []
+            }
+        }
+    }
+}
