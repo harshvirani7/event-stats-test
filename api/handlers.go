@@ -18,15 +18,14 @@ func TotalEventCount(c *gin.Context) {
 }
 
 func StoreEventData(c *gin.Context) {
-	var data model.Data
+	var data []model.Data
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Store eventType, cameraid, and timestamp into Redis
-	err := storage.StoreEventData(data.Info.Event.EventType, data.Info.Event.CameraID, data.Info.Event.Timestamp)
-	if err != nil {
+	// Store events into Redis
+	if err := storage.StoreEventData(data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

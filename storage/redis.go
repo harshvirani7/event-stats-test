@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/harshvirani7/event-stats-test/model"
 )
 
 var redisClient *redis.Client
@@ -21,13 +22,14 @@ func GetTotalEventCount() (int, error) {
 	return 0, nil
 }
 
-func StoreEventData(eventType, cameraID, timestamp string) error {
-	// Store eventType, cameraID, and timestamp into Redis
+func StoreEventData(events []model.Data) error {
 	ctx := context.Background()
-	key := "event:" + cameraID
-	err := redisClient.HSet(ctx, key, eventType, timestamp).Err()
-	if err != nil {
-		return err
+	for _, event := range events {
+		key := "event:" + event.Info.Event.EventType
+		err := redisClient.HSet(ctx, key, event.Info.Event.CameraID, event.Info.Event.Timestamp).Err()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
