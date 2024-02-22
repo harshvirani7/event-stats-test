@@ -5,9 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/api"
+	"github.com/harshvirani7/event-stats-test/storage"
 )
 
 func main() {
+	// Initialize Redis client
+	storage.InitRedisClient()
 
 	// Initialize Gin router
 	router := gin.Default()
