@@ -35,4 +35,4 @@ func main() {
 // GET /esnSummary/{ESNID}
 
 // format data from pulsar and store to redis
-// APIs will fetch data from redis
+// APIs will fetch data from redis store
