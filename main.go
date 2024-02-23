@@ -31,12 +31,6 @@ func main() {
 // for each esn - count of total no of events - qp - event type
 // GET - /totalEventsByESN/{eventType} // total events of that type for each esn
 // count of event by esn id
-// GET /totalEvents/{ESNID} -> int
+// GET /totalEvents/{cameraId} -> int
 // each event count for the esn
 // GET /esnSummary/{ESNID}
-
-// format data from pulsar and store to redis
-// APIs will fetch data from redis store
-
-// cameraId, timestamp, eventype
-// POST API - workflow document - process and store relevant data in redis
