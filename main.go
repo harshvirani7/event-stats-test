@@ -1,27 +1,27 @@
 package main
 
 import (
-	"net/http"
+	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/harshvirani7/event-stats-test/api"
+	"github.com/harshvirani7/event-stats-test/storage"
 )
 
 func main() {
-	// Create a new Gin router
+	// Initialize Redis client
+	storage.InitRedisClient()
+
+	// Initialize Gin router
 	router := gin.Default()
 
-	// Define a route for the API endpoint
-	router.GET("/api/basic-text", func(c *gin.Context) {
-		// Set the response status code and content type
-		c.Status(http.StatusOK)
-		c.Header("Content-Type", "text/plain")
-
-		// Write the response body
-		c.String(http.StatusOK, "This is some basic text returned by the API.")
-	})
+	// Initialize routes
+	api.InitRoutes(router)
 
 	// Run the server
-	router.Run(":8080")
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
 // get data from pulsar and modify and store in redis
@@ -31,9 +31,6 @@ func main() {
 // for each esn - count of total no of events - qp - event type
 // GET - /totalEventsByESN/{eventType} // total events of that type for each esn
 // count of event by esn id
-// GET /totalEvents/{ESNID} -> int
+// GET /totalEvents/{cameraId} -> int
 // each event count for the esn
 // GET /esnSummary/{ESNID}
-
-// format data from pulsar and store to redis
-// APIs will fetch data from redis store
