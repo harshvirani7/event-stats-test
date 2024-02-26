@@ -84,6 +84,7 @@ func main() {
 		eventStatsApis := apis.EventStats{Logger: logger, RdbClient: rdbClient, Cfg: cfg}
 		collectionEventStats.POST("/storeEventData", eventStatsApis.StoreEventData())
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
+		// collectionEventStats.GET("/totalEventCountByCameraId", TotalEventCountByCameraId)
 	}
 
 	// Initializing the server in a goroutine so that
