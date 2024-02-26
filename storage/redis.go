@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -47,38 +48,35 @@ func StoreEventData(events []model.Data) error {
 }
 
 // Function to get event count by cameraid for a given eventType from Redis
-func GetEventCountByCameraID(eventType string) (map[string]int64, error) {
+func GetEventCountByCameraID(cameraId string) (int64, error) {
 	ctx := context.Background()
-	// Use Redis HGetAll command to get all the fields and values in the hash set
-	fieldsValues := redisClient.HGetAll(ctx, "event:"+eventType).Val()
-
-	// Initialize a map to store counts for each cameraid
-	counts := make(map[string]int64)
-
-	// Loop through the fields and values and calculate the count for each cameraid
-	for field, _ := range fieldsValues {
-		counts[field]++
+	keys, err := redisClient.Keys(ctx, cameraId+"_*").Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get keys from Redis: %v", err)
 	}
 
-	return counts, nil
-}
-
-// Function to get total event count by cameraId from Redis
-func GetTotalEventCountByCameraID(cameraId string) (int64, error) {
-	ctx := context.Background()
-	// Use Redis HLen command to get the count of keys in the hash set
-	count := redisClient.HLen(ctx, "event:"+cameraId).Val()
+	count := int64(len(keys))
 	return count, nil
 }
 
-// Function to get all data from Redis
-func GetAllEventData() (map[string]string, error) {
+func GetEventCountSummaryByCameraID(cameraId string) (map[string]int64, error) {
 	ctx := context.Background()
-	// Use Redis HGetAll command to get all the fields and values in the hash set
-	data := redisClient.HGetAll(ctx, "events").Val()
-	return data, nil
+	keys, err := redisClient.Keys(ctx, cameraId+"_*").Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys from Redis: %v", err)
+	}
+
+	eventCounts := make(map[string]int64)
+	for _, key := range keys {
+		parts := strings.Split(key, "_")
+		if len(parts) != 3 {
+			continue // Skip if the key format is invalid
+		}
+		eventType := parts[2]
+
+		eventCounts[eventType]++
+	}
+
+	fmt.Print(eventCounts)
+	return eventCounts, nil
 }
-
-// update key to be cameraID_timestamp_eventype
-
-// *eventtype - regex for search

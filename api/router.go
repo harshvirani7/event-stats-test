@@ -4,10 +4,9 @@ import "github.com/gin-gonic/gin"
 
 func InitRoutes(router *gin.Engine) {
 	router.POST("/storeEventData", StoreEventData)
-	router.GET("/totalEventCountByType", TotalEventCountByType)
-	router.GET("/eventCountByCameraId", EventCountByCameraID)
-	router.GET("/totalEventCountByCameraId", TotalEventCountByCameraID) // TODO: check for validity of data
-	router.GET("/getAllEventData", GetAllEventData)
+	router.GET("/totalCountByEventType", TotalEventCountByType)
+	router.GET("/totalCountByCameraId", TotalEventCountByCameraId)
+	router.GET("/eventCountSummaryByCameraId", EventCountSummaryByCameraId)
 }
 
 // create interface - method to store data
