@@ -49,9 +49,9 @@ func GetTotalEventCountByType(eventType string, rdbClient *cache.Redis) (int64, 
 }
 
 // Function to get event count by cameraid for a given eventType from Redis
-func GetEventCountByCameraID(cameraId string) (int64, error) {
+func GetEventCountByCameraID(cameraId string, rdbClient *cache.Redis) (int64, error) {
 	ctx := context.Background()
-	keys, err := redisClient.Keys(ctx, cameraId+"_*").Result()
+	keys, err := rdbClient.Scan(ctx, cameraId+"_*")
 	if err != nil {
 		return 0, fmt.Errorf("failed to get keys from Redis: %v", err)
 	}
@@ -60,9 +60,9 @@ func GetEventCountByCameraID(cameraId string) (int64, error) {
 	return count, nil
 }
 
-func GetEventCountSummaryByCameraID(cameraId string) (map[string]int64, error) {
+func GetEventCountSummaryByCameraID(cameraId string, rdbClient *cache.Redis) (map[string]int64, error) {
 	ctx := context.Background()
-	keys, err := redisClient.Keys(ctx, cameraId+"_*").Result()
+	keys, err := rdbClient.Scan(ctx, cameraId+"_*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get keys from Redis: %v", err)
 	}

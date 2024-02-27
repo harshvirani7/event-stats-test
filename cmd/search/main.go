@@ -84,7 +84,8 @@ func main() {
 		eventStatsApis := apis.EventStats{Logger: logger, RdbClient: rdbClient, Cfg: cfg}
 		collectionEventStats.POST("/storeEventData", eventStatsApis.StoreEventData())
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
-		// collectionEventStats.GET("/totalEventCountByCameraId", TotalEventCountByCameraId)
+		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())
+		collectionEventStats.GET("/eventCountSummaryByCameraId", eventStatsApis.EventCountSummaryByCameraId())
 	}
 
 	// Initializing the server in a goroutine so that
@@ -144,3 +145,8 @@ func exitOnNil(object interface{}, message string) {
 // GET /totalEvents/{cameraId} -> int
 // each event count for the esn
 // GET /esnSummary/{ESNID}
+
+// create interface - method to store data
+// implement method for pulsar structure\
+// interface for stote
+// similarly for other handlers

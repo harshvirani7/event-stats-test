@@ -62,7 +62,7 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
-func (es EventStats) TotalEventCountByCameraId(c *gin.Context) gin.HandlerFunc {
+func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		// Get eventType from query parameter
 		cameraId := c.Query("cameraId")
@@ -72,7 +72,7 @@ func (es EventStats) TotalEventCountByCameraId(c *gin.Context) gin.HandlerFunc {
 		}
 
 		// Get total event count for each cameraid for the given eventType
-		count, err := storage.GetEventCountByCameraID(cameraId)
+		count, err := storage.GetEventCountByCameraID(cameraId, es.RdbClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -82,6 +82,32 @@ func (es EventStats) TotalEventCountByCameraId(c *gin.Context) gin.HandlerFunc {
 		response := gin.H{
 			"cameraId":          cameraId,
 			"total_event_count": count,
+		}
+		c.JSON(http.StatusOK, response)
+	}
+	return gin.HandlerFunc(fn)
+}
+
+func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		// Get cameraId from query parameter
+		cameraId := c.Query("cameraId")
+		if cameraId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "cameraId query parameter is required"})
+			return
+		}
+
+		// Get event counts for the given cameraId from Redis
+		eventCounts, err := storage.GetEventCountSummaryByCameraID(cameraId, es.RdbClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Return each event counts for the given cameraId
+		response := gin.H{
+			"cameraId":         cameraId,
+			"each_event_count": eventCounts,
 		}
 		c.JSON(http.StatusOK, response)
 	}
