@@ -21,15 +21,6 @@ const (
 	apiServerShutdownPeriod = 5 * time.Second
 	dbReconnectRetries      = 5
 	redisReconnectRetries   = 5
-	elasticStartupTimeout   = 30 * time.Second
-	breakerProbeRate        = 5
-	breakerMonitoringWindow = 5 * time.Second
-	breakerMinProbeDuration = 5 * time.Second
-	breakerMinOpenDuration  = 10 * time.Second
-	breakerMinCloseDuration = 20 * time.Second
-	breakerOpenThreshold    = 100
-	breakerCloseThreshold   = 60
-	ESBreakerWaitDuration   = 10 * time.Millisecond
 )
 
 func main() {
@@ -66,12 +57,6 @@ func main() {
 		logger.Infof("Redis connection established, addr: %v", addr)
 	}
 
-	// Initialize Redis client
-	// storage.InitRedisClient()
-
-	// Initialize Gin router
-	// router := gin.Default()
-
 	// Set up API service routes and controller
 	r := gin.Default()
 	httpServer := &http.Server{
@@ -86,6 +71,7 @@ func main() {
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
 		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())
 		collectionEventStats.GET("/eventCountSummaryByCameraId", eventStatsApis.EventCountSummaryByCameraId())
+		collectionEventStats.GET("/eventCountSummaryByEventType", eventStatsApis.EventCountSummaryByEventType())
 	}
 
 	// Initializing the server in a goroutine so that
@@ -150,3 +136,18 @@ func exitOnNil(object interface{}, message string) {
 // implement method for pulsar structure\
 // interface for stote
 // similarly for other handlers
+
+// add timestamp in camera summaries
+
+// add timestamps in summary APIs
+// input - eventType
+// [
+// 	{
+// 		cameraid: abc,
+// 		timestamp: xyz
+// 	}
+// 	{
+// 		cameraid: abc,
+// 		timestamp: xyz
+// 	}
+// ]

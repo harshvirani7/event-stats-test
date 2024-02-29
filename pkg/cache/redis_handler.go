@@ -106,7 +106,6 @@ func (r *Redis) Delete(ctx context.Context, key string) error {
 
 // Method returns a Redis iterator
 func (r *Redis) Scan(ctx context.Context, keyPattern string) ([]string, error) {
-	// TODO: align the function with other functions
 
 	keys, _, err := r.client.Scan(ctx, 0, keyPattern, 50).Result()
 	if err != nil {

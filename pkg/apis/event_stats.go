@@ -7,7 +7,7 @@ import (
 	"github.com/harshvirani7/event-stats-test/model"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	"github.com/harshvirani7/event-stats-test/pkg/config"
-	"github.com/harshvirani7/event-stats-test/storage"
+	"github.com/harshvirani7/event-stats-test/pkg/storage"
 	"go.uber.org/zap"
 )
 
@@ -24,9 +24,12 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
+		sd := storage.StoreDataAPI{
+			RdbClient: es.RdbClient,
+		}
 		// Store events into Redis
-		if err := storage.StoreEventData(data, es.RdbClient); err != nil {
+		// change this to call from a struct
+		if err := sd.StoreEventData(data); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -106,8 +109,34 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 
 		// Return each event counts for the given cameraId
 		response := gin.H{
-			"cameraId":         cameraId,
-			"each_event_count": eventCounts,
+			"cameraId":      cameraId,
+			"event_summary": eventCounts,
+		}
+		c.JSON(http.StatusOK, response)
+	}
+	return gin.HandlerFunc(fn)
+}
+
+func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		// Get eventType from query parameter
+		eventType := c.Query("eventType")
+		if eventType == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
+			return
+		}
+
+		// Get total camera event counts for the given eventType from Redis
+		eventCounts, err := storage.GetEventCountSummaryByEventType(eventType, es.RdbClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Return each event counts for the given cameraId
+		response := gin.H{
+			"eventType":      eventType,
+			"camera_summary": eventCounts,
 		}
 		c.JSON(http.StatusOK, response)
 	}

@@ -6,29 +6,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/harshvirani7/event-stats-test/model"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 )
 
-var redisClient *redis.Client
+type ServiceInterface interface {
+	StoreEventData(events []model.Data) error
+}
 
-func InitRedisClient() {
-	redisClient = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // Update with your Redis server address
-		Password: "",               // No password set
-		DB:       0,                // Use default DB
-	})
+type StoreDataAPI struct {
+	RdbClient *cache.Redis
 }
 
 // StoreEventData stores the event Data in a formatted way in redis with a combination of cameraID, timestmap and eventType
-func StoreEventData(events []model.Data, rdbClient *cache.Redis) error {
+func (sd StoreDataAPI) StoreEventData(events []model.Data) error {
 	ctx := context.Background()
 
 	placeHolderValue := "_"
 	for _, event := range events {
 		key := event.Info.Event.CameraID + placeHolderValue + event.Info.Event.Timestamp + placeHolderValue + event.Info.Event.EventType
-		err := rdbClient.Add(ctx, key, []byte{}, time.Hour)
+		err := sd.RdbClient.Add(ctx, key, []byte{}, time.Hour)
 		if err != nil {
 			return err
 		}
@@ -80,3 +77,26 @@ func GetEventCountSummaryByCameraID(cameraId string, rdbClient *cache.Redis) (ma
 
 	return eventCounts, nil
 }
+
+func GetEventCountSummaryByEventType(eventType string, rdbClient *cache.Redis) (map[string]int64, error) {
+	ctx := context.Background()
+	keys, err := rdbClient.Scan(ctx, "*_"+eventType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys from Redis: %v", err)
+	}
+
+	eventCounts := make(map[string]int64)
+	for _, key := range keys {
+		parts := strings.Split(key, "_")
+		if len(parts) != 3 {
+			continue // Skip if the key format is invalid
+		}
+		cameraId := parts[0]
+
+		eventCounts[cameraId]++
+	}
+
+	return eventCounts, nil
+}
+
+// read about pulsar - producer, consumer

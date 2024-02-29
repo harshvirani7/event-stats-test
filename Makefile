@@ -1,22 +1,22 @@
-# Makefile for building and running the Go service
-
-.PHONY: build run stop clean
-
-SERVICE_NAME := event-stats-test
+# Define variables
+IMAGE_NAME=event_stats_test
+CONTAINER_NAME=event_stats_test_container
 
 build:
-    @echo "Building $(SERVICE_NAME)..."
-    go build -o $(SERVICE_NAME) .
+	docker build -t $(IMAGE_NAME) .
 
+# Run Docker container
 run:
-    @echo "Starting $(SERVICE_NAME)..."
-    ./$(SERVICE_NAME)
+	docker run -d -p 8080:8080 --name $(CONTAINER_NAME) $(IMAGE_NAME)
 
+# Stop Docker container
 stop:
-    @echo "Stopping $(SERVICE_NAME)..."
-    # If your service needs to be stopped in a specific way, add the command here
+	docker stop $(CONTAINER_NAME)
 
-clean:
-    @echo "Cleaning up..."
-    go clean
-    rm -f $(SERVICE_NAME)
+# Remove Docker container
+rm:
+	docker rm $(CONTAINER_NAME)
+
+# Remove Docker image
+rmi:
+	docker rmi $(IMAGE_NAME)
