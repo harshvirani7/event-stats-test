@@ -18,6 +18,16 @@ type StoreDataAPI struct {
 	RdbClient *cache.Redis
 }
 
+type EventTypeSummary struct {
+	CameraID  string `json:"cameraId"`
+	Timestamp string `json:"timestamp"`
+}
+
+type CameraSummary struct {
+	EventType string `json:"eventType"`
+	Timestamp string `json:"timestamp"`
+}
+
 // StoreEventData stores the event Data in a formatted way in redis with a combination of cameraID, timestmap and eventType
 func (sd StoreDataAPI) StoreEventData(events []model.Data) error {
 	ctx := context.Background()
@@ -99,4 +109,48 @@ func GetEventCountSummaryByEventType(eventType string, rdbClient *cache.Redis) (
 	return eventCounts, nil
 }
 
-// read about pulsar - producer, consumer
+func GetEventSummaryByCameraID(cameraId string, rdbClient *cache.Redis) ([]CameraSummary, error) {
+	ctx := context.Background()
+	keys, err := rdbClient.Scan(ctx, cameraId+"_*")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys from Redis: %v", err)
+	}
+
+	var cameraSummary []CameraSummary
+	for _, key := range keys {
+		parts := strings.Split(key, "_")
+		if len(parts) != 3 {
+			continue // Skip if the key format is invalid
+		}
+		eventType := parts[2]
+		timestamp := parts[1]
+
+		event := CameraSummary{EventType: eventType, Timestamp: timestamp}
+		cameraSummary = append(cameraSummary, event)
+	}
+
+	return cameraSummary, nil
+}
+
+func GetEventSummaryByEventType(eventType string, rdbClient *cache.Redis) ([]EventTypeSummary, error) {
+	ctx := context.Background()
+	keys, err := rdbClient.Scan(ctx, "*_"+eventType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get keys from Redis: %v", err)
+	}
+
+	var eventSummary []EventTypeSummary
+	for _, key := range keys {
+		parts := strings.Split(key, "_")
+		if len(parts) != 3 {
+			continue // Skip if the key format is invalid
+		}
+		cameraId := parts[0]
+		timestamp := parts[1]
+
+		event := EventTypeSummary{CameraID: cameraId, Timestamp: timestamp}
+		eventSummary = append(eventSummary, event)
+	}
+
+	return eventSummary, nil
+}

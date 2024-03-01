@@ -72,6 +72,8 @@ func main() {
 		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())
 		collectionEventStats.GET("/eventCountSummaryByCameraId", eventStatsApis.EventCountSummaryByCameraId())
 		collectionEventStats.GET("/eventCountSummaryByEventType", eventStatsApis.EventCountSummaryByEventType())
+		collectionEventStats.GET("/SummaryByCameraId", eventStatsApis.SummaryByCameraId())
+		collectionEventStats.GET("/SummaryByEventType", eventStatsApis.SummaryByEventType())
 	}
 
 	// Initializing the server in a goroutine so that
@@ -122,32 +124,3 @@ func exitOnNil(object interface{}, message string) {
 		os.Exit(1)
 	}
 }
-
-// query param - event type - return total event count
-// GET - /countByEventType/{eventType}
-// for each esn - count of total no of events - qp - event type
-// GET - /totalEventsByESN/{eventType} // total events of that type for each esn
-// count of event by esn id
-// GET /totalEvents/{cameraId} -> int
-// each event count for the esn
-// GET /esnSummary/{ESNID}
-
-// create interface - method to store data
-// implement method for pulsar structure\
-// interface for stote
-// similarly for other handlers
-
-// add timestamp in camera summaries
-
-// add timestamps in summary APIs
-// input - eventType
-// [
-// 	{
-// 		cameraid: abc,
-// 		timestamp: xyz
-// 	}
-// 	{
-// 		cameraid: abc,
-// 		timestamp: xyz
-// 	}
-// ]

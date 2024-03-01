@@ -142,3 +142,47 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 	}
 	return gin.HandlerFunc(fn)
 }
+
+func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		// Get eventType from query parameter
+		cameraId := c.Query("cameraId")
+		if cameraId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
+			return
+		}
+
+		// Get event summary for the given eventType from Redis
+		eventSummary, err := storage.GetEventSummaryByCameraID(cameraId, es.RdbClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Return event summary for the given eventType
+		c.JSON(http.StatusOK, gin.H{"eventType": cameraId, "event_summary": eventSummary})
+	}
+	return gin.HandlerFunc(fn)
+}
+
+func (es EventStats) SummaryByEventType() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		// Get eventType from query parameter
+		eventType := c.Query("eventType")
+		if eventType == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
+			return
+		}
+
+		// Get event summary for the given eventType from Redis
+		eventSummary, err := storage.GetEventSummaryByEventType(eventType, es.RdbClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Return event summary for the given eventType
+		c.JSON(http.StatusOK, gin.H{"eventType": eventType, "event_summary": eventSummary})
+	}
+	return gin.HandlerFunc(fn)
+}
