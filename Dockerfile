@@ -4,7 +4,7 @@ FROM golang:1.22.0-alpine AS builder
 ENV HOME /usr/src/app
 WORKDIR $HOME
 
-# Copy the Go application source code and config file into the container
+# Copy the Go application source code into the container
 COPY . .
 
 # Download Go module dependencies
