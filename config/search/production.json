@@ -1,0 +1,15 @@
+{
+    "log_level": 0,
+    "redis_master": "mymaster",
+    "redis_timeout": 3000,
+    "server_timeout": 120000,
+    "redis_failover": false,
+    "redis_addr": "localhost:6379",
+    "redis_password": "",
+    "redis_db": 0,
+    "api_path": "",
+    "api": {
+        "port": 8080
+    }
+}
+
