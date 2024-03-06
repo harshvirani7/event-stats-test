@@ -13,6 +13,8 @@ import (
 	"github.com/harshvirani7/event-stats-test/pkg/apis"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	config "github.com/harshvirani7/event-stats-test/pkg/config"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -22,6 +24,12 @@ const (
 	dbReconnectRetries      = 5
 	redisReconnectRetries   = 5
 )
+
+var version string
+
+func init() {
+	version = "1.0.1"
+}
 
 func main() {
 	cfg, err := config.Load(
@@ -57,6 +65,11 @@ func main() {
 		logger.Infof("Redis connection established, addr: %v", addr)
 	}
 
+	reg := prometheus.NewRegistry()
+	m := NewMetrics(reg)
+
+	m.info.With(prometheus.Labels{"version": version}).Set(1)
+
 	// Set up API service routes and controller
 	r := gin.Default()
 	httpServer := &http.Server{
@@ -75,6 +88,14 @@ func main() {
 		collectionEventStats.GET("/SummaryByCameraId", eventStatsApis.SummaryByCameraId())
 		collectionEventStats.GET("/SummaryByEventType", eventStatsApis.SummaryByEventType())
 	}
+
+	r.GET(cfg.GetString("api_path")+"health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Ok",
+		})
+	})
+
+	r.GET(cfg.GetString("api_path")+"metrics", prometheusHandler(reg))
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
@@ -124,3 +145,31 @@ func exitOnNil(object interface{}, message string) {
 		os.Exit(1)
 	}
 }
+
+type metrics struct {
+	info *prometheus.GaugeVec
+}
+
+func NewMetrics(reg prometheus.Registerer) *metrics {
+	m := &metrics{
+		info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "myapp",
+			Name:      "info",
+			Help:      "Information about the My App environment.",
+		},
+			[]string{"version"}),
+	}
+	reg.MustRegister(m.info)
+	return m
+}
+
+func prometheusHandler(reg *prometheus.Registry) gin.HandlerFunc {
+	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
+	return func(c *gin.Context) {
+		promHandler.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+// Metrics
+// no. of events added
+// count of total cameras
