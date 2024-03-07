@@ -8,13 +8,20 @@ import (
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	"github.com/harshvirani7/event-stats-test/pkg/config"
 	"github.com/harshvirani7/event-stats-test/pkg/storage"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
+
+type Metrics struct {
+	EventCount prometheus.Gauge
+	Info       *prometheus.GaugeVec
+}
 
 type EventStats struct {
 	Logger    *zap.SugaredLogger
 	RdbClient *cache.Redis
 	Cfg       config.Config
+	Metrics   *Metrics
 }
 
 func (es EventStats) StoreEventData() gin.HandlerFunc {
@@ -35,6 +42,13 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
+
+		count, err := storage.GetTotalEventCount(es.RdbClient)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		es.Metrics.EventCount.Set(float64(count))
 	}
 	return gin.HandlerFunc(fn)
 }

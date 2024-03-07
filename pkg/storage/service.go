@@ -154,3 +154,14 @@ func GetEventSummaryByEventType(eventType string, rdbClient *cache.Redis) ([]Eve
 
 	return eventSummary, nil
 }
+
+func GetTotalEventCount(rdbClient *cache.Redis) (int, error) {
+	ctx := context.Background()
+	keys, err := rdbClient.Scan(ctx, "")
+	if err != nil {
+		return 0, fmt.Errorf("Error fetching keys: %v", err)
+	}
+
+	// Count the number of keys.
+	return len(keys), nil
+}

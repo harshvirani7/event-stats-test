@@ -68,7 +68,7 @@ func main() {
 	reg := prometheus.NewRegistry()
 	m := NewMetrics(reg)
 
-	m.info.With(prometheus.Labels{"version": version}).Set(1)
+	m.Info.With(prometheus.Labels{"version": version}).Set(1)
 
 	// Set up API service routes and controller
 	r := gin.Default()
@@ -79,7 +79,12 @@ func main() {
 
 	collectionEventStats := r.Group(cfg.GetString("api_path") + "eventStats")
 	{
-		eventStatsApis := apis.EventStats{Logger: logger, RdbClient: rdbClient, Cfg: cfg}
+		eventStatsApis := apis.EventStats{
+			Logger:    logger,
+			RdbClient: rdbClient,
+			Cfg:       cfg,
+			Metrics:   m,
+		}
 		collectionEventStats.POST("/storeEventData", eventStatsApis.StoreEventData())
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
 		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())
@@ -146,20 +151,21 @@ func exitOnNil(object interface{}, message string) {
 	}
 }
 
-type metrics struct {
-	info *prometheus.GaugeVec
-}
-
-func NewMetrics(reg prometheus.Registerer) *metrics {
-	m := &metrics{
-		info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+func NewMetrics(reg prometheus.Registerer) *apis.Metrics {
+	m := &apis.Metrics{
+		EventCount: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: "myapp",
+			Name:      "connected_devices",
+			Help:      "Number of currently connected devices.",
+		}),
+		Info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "myapp",
 			Name:      "info",
 			Help:      "Information about the My App environment.",
 		},
 			[]string{"version"}),
 	}
-	reg.MustRegister(m.info)
+	reg.MustRegister(m.EventCount, m.Info)
 	return m
 }
 
