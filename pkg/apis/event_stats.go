@@ -2,26 +2,30 @@ package apis
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/model"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	"github.com/harshvirani7/event-stats-test/pkg/config"
 	"github.com/harshvirani7/event-stats-test/pkg/storage"
+	"github.com/harshvirani7/event-stats-test/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
-
-type Metrics struct {
-	EventCount prometheus.Gauge
-	Info       *prometheus.GaugeVec
-}
 
 type EventStats struct {
 	Logger    *zap.SugaredLogger
 	RdbClient *cache.Redis
 	Cfg       config.Config
 	Metrics   *Metrics
+}
+
+type Metrics struct {
+	EventCount               prometheus.Gauge
+	Info                     *prometheus.GaugeVec
+	DurationCountByEventType *prometheus.HistogramVec
+	DurationCountByCameraId  *prometheus.HistogramVec
 }
 
 func (es EventStats) StoreEventData() gin.HandlerFunc {
@@ -55,6 +59,7 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 
 func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
+		now := time.Now()
 		// Get event type from query parameter
 		eventType := c.Query("eventType")
 		if eventType == "" {
@@ -69,6 +74,10 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 			return
 		}
 
+		utils.Sleep(200)
+
+		es.Metrics.DurationCountByEventType.With(prometheus.Labels{"method": "GET", "status": "200"}).Observe(time.Since(now).Seconds())
+
 		// Return total count and eventType in the response
 		response := gin.H{
 			"eventType":         eventType,
@@ -81,6 +90,7 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 
 func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
+		now := time.Now()
 		// Get eventType from query parameter
 		cameraId := c.Query("cameraId")
 		if cameraId == "" {
@@ -94,6 +104,10 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
+		utils.Sleep(200)
+
+		es.Metrics.DurationCountByCameraId.With(prometheus.Labels{"method": "GET", "status": "200"}).Observe(time.Since(now).Seconds())
 
 		// Return total count and eventType in the response
 		response := gin.H{

@@ -164,8 +164,23 @@ func NewMetrics(reg prometheus.Registerer) *apis.Metrics {
 			Help:      "Information about the My App environment.",
 		},
 			[]string{"version"}),
+		DurationCountByEventType: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "myapp",
+			Name:      "request_duration_seconds",
+			Help:      "Duration of the request.",
+			// 4 times larger for apdex score
+			// Buckets: prometheus.ExponentialBuckets(0.1, 1.5, 5),
+			// Buckets: prometheus.LinearBuckets(0.1, 5, 5),
+			Buckets: []float64{0.1, 0.15, 0.2, 0.25, 0.3},
+		}, []string{"status", "method"}),
+		DurationCountByCameraId: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "myapp",
+			Name:      "request_duration_seconds_totalEventCountByCameraId",
+			Help:      "Duration of the request totalEventCountByCameraId",
+			Buckets:   []float64{0.1, 0.15, 0.2, 0.25, 0.3},
+		}, []string{"status", "method"}),
 	}
-	reg.MustRegister(m.EventCount, m.Info)
+	reg.MustRegister(m.EventCount, m.Info, m.DurationCountByEventType, m.DurationCountByCameraId)
 	return m
 }
 
