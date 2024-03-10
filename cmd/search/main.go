@@ -13,6 +13,7 @@ import (
 	"github.com/harshvirani7/event-stats-test/pkg/apis"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	config "github.com/harshvirani7/event-stats-test/pkg/config"
+	"github.com/harshvirani7/event-stats-test/pkg/monitor"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
@@ -65,8 +66,8 @@ func main() {
 		logger.Infof("Redis connection established, addr: %v", addr)
 	}
 
-	reg := prometheus.NewRegistry()
-	m := NewMetrics(reg)
+	PromCamRegistry := prometheus.NewRegistry()
+	m := monitor.NewMetrics(PromCamRegistry)
 
 	m.Info.With(prometheus.Labels{"version": version}).Set(1)
 
@@ -100,7 +101,7 @@ func main() {
 		})
 	})
 
-	r.GET(cfg.GetString("api_path")+"metrics", prometheusHandler(reg))
+	r.GET(cfg.GetString("api_path")+"metrics", prometheusHandler(PromCamRegistry))
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
@@ -151,39 +152,6 @@ func exitOnNil(object interface{}, message string) {
 	}
 }
 
-func NewMetrics(reg prometheus.Registerer) *apis.Metrics {
-	m := &apis.Metrics{
-		EventCount: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "myapp",
-			Name:      "connected_devices",
-			Help:      "Number of currently connected devices.",
-		}),
-		Info: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: "myapp",
-			Name:      "info",
-			Help:      "Information about the My App environment.",
-		},
-			[]string{"version"}),
-		DurationCountByEventType: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: "myapp",
-			Name:      "request_duration_seconds",
-			Help:      "Duration of the request.",
-			// 4 times larger for apdex score
-			// Buckets: prometheus.ExponentialBuckets(0.1, 1.5, 5),
-			// Buckets: prometheus.LinearBuckets(0.1, 5, 5),
-			Buckets: []float64{0.1, 0.15, 0.2, 0.25, 0.3},
-		}, []string{"status", "method"}),
-		DurationCountByCameraId: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: "myapp",
-			Name:      "request_duration_seconds_totalEventCountByCameraId",
-			Help:      "Duration of the request totalEventCountByCameraId",
-			Buckets:   []float64{0.1, 0.15, 0.2, 0.25, 0.3},
-		}, []string{"status", "method"}),
-	}
-	reg.MustRegister(m.EventCount, m.Info, m.DurationCountByEventType, m.DurationCountByCameraId)
-	return m
-}
-
 func prometheusHandler(reg *prometheus.Registry) gin.HandlerFunc {
 	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
 	return func(c *gin.Context) {
@@ -194,3 +162,9 @@ func prometheusHandler(reg *prometheus.Registry) gin.HandlerFunc {
 // Metrics
 // no. of events added
 // count of total cameras
+
+// total requests made
+// average latency
+// no of successfull and fail requests
+
+// rate of request for all the endpoints in one graph - number and chart
