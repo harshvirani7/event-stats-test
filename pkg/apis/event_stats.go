@@ -16,8 +16,15 @@ import (
 )
 
 type RequestDetailCount struct {
-	SuccessRequestCount int `json:"successRequestCount"`
-	ErrorRequestCount   int `json:"errorRequestCount"`
+	SuccessRequestCount                    int `json:"successRequestCount"`
+	ErrorRequestCount                      int `json:"errorRequestCount"`
+	StoreEventDataSuccessCnt               int `json:"storeEventDataSuccessCnt"`
+	TotalEventCountByTypeSuccessCnt        int `json:"totalEventCountByTypeSuccessCnt"`
+	TotalEventCountByCameraIdSuccessCnt    int `json:"totalEventCountByCameraIdSuccessCnt"`
+	EventCountSummaryByCameraIdSuccessCnt  int `json:"eventCountSummaryByCameraIdSuccessCnt"`
+	EventCountSummaryByEventTypeSuccessCnt int `json:"eventCountSummaryByEventTypeSuccessCnt"`
+	SummaryByCameraIdSuccessCnt            int `json:"summaryByCameraIdSuccessCnt"`
+	SummaryByEventTypeSuccessCnt           int `json:"summaryByEventTypeSuccessCnt"`
 }
 
 var ReqDetailCount RequestDetailCount
@@ -32,8 +39,15 @@ type EventStats struct {
 func init() {
 
 	ReqDetailCount = RequestDetailCount{
-		SuccessRequestCount: 0,
-		ErrorRequestCount:   0,
+		SuccessRequestCount:                    0,
+		ErrorRequestCount:                      0,
+		StoreEventDataSuccessCnt:               0,
+		TotalEventCountByTypeSuccessCnt:        0,
+		TotalEventCountByCameraIdSuccessCnt:    0,
+		EventCountSummaryByEventTypeSuccessCnt: 0,
+		EventCountSummaryByCameraIdSuccessCnt:  0,
+		SummaryByEventTypeSuccessCnt:           0,
+		SummaryByCameraIdSuccessCnt:            0,
 	}
 }
 
@@ -60,8 +74,11 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		ReqDetailCount.SuccessRequestCount += +1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.StoreEventDataSuccessCnt += 1
+		es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
 
 		count, err := storage.GetTotalEventCount(es.RdbClient)
 		if err != nil {
@@ -115,6 +132,9 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.TotalEventCountByTypeSuccessCnt += 1
+		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -157,6 +177,9 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt += 1
+		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -194,6 +217,9 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt += 1
+		es.Metrics.EventCountSummaryByCameraIdSuccess.Set(float64(ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -231,6 +257,9 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt += 1
+		es.Metrics.EventCountSummaryByEventTypeSuccess.Set(float64(ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -264,6 +293,9 @@ func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.SummaryByCameraIdSuccessCnt += 1
+		es.Metrics.SummaryByCameraIdSuccess.Set(float64(ReqDetailCount.SummaryByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -297,6 +329,9 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 
 		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
 		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+
+		ReqDetailCount.SummaryByEventTypeSuccessCnt += 1
+		es.Metrics.SummaryByEventTypeSuccess.Set(float64(ReqDetailCount.SummaryByEventTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
