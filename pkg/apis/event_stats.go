@@ -18,8 +18,6 @@ import (
 )
 
 type RequestDetailCount struct {
-	SuccessRequestCount                    int `json:"successRequestCount"`
-	ErrorRequestCount                      int `json:"errorRequestCount"`
 	StoreEventDataSuccessCnt               int `json:"storeEventDataSuccessCnt"`
 	TotalEventCountByTypeSuccessCnt        int `json:"totalEventCountByTypeSuccessCnt"`
 	TotalEventCountByCameraIdSuccessCnt    int `json:"totalEventCountByCameraIdSuccessCnt"`
@@ -41,8 +39,6 @@ type EventStats struct {
 func init() {
 
 	ReqDetailCount = RequestDetailCount{
-		SuccessRequestCount:                    0,
-		ErrorRequestCount:                      0,
 		StoreEventDataSuccessCnt:               0,
 		TotalEventCountByTypeSuccessCnt:        0,
 		TotalEventCountByCameraIdSuccessCnt:    0,
@@ -76,63 +72,6 @@ func MonitoringMiddleware(cfg config.Config, es EventStats) gin.HandlerFunc {
 			"path": path, "status": status,
 		}).
 			Observe(time.Since(start).Seconds())
-
-		// if status >= http.StatusOK && status < http.StatusBadRequest {
-		// 	es.IncrementSuccessCounter("success")
-		// 	// switch path := c.FullPath(); path {
-		// 	// case "/eventStatsstoreEventData":
-		// 	// 	//es.IncrementSuccessCounter("StoreEventData")
-		// 	// // case "/total-event-count-by-type":
-		// 	// // 	es.IncrementSuccessCounter("TotalEventCountByType")
-		// 	// // case "/total-event-count-by-camera-id":
-		// 	// // 	es.IncrementSuccessCounter("TotalEventCountByCameraId")
-		// 	// // Add cases for other endpoints
-		// 	// default:
-		// 	// 	// Do nothing
-		// 	// }
-		// }
-		// else {
-		// 	// es.IncrementErrorCounter()
-		// }
-
-		// duration := time.Since(start).Seconds()
-
-		// es.Metrics.DurationCount.With(prometheus.Labels{"method": method, "status": http.StatusText(status)}).Observe(duration)
-	}
-}
-
-func (es *EventStats) IncrementSuccessCounter(endpoint string) {
-	switch endpoint {
-	case "StoreEventData":
-		ReqDetailCount.StoreEventDataSuccessCnt++
-		es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
-	case "TotalEventCountByType":
-		ReqDetailCount.TotalEventCountByTypeSuccessCnt++
-		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
-	case "TotalEventCountByCameraId":
-		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt++
-		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
-	// Add cases for other endpoints
-	default:
-		ReqDetailCount.SuccessRequestCount++
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-	}
-}
-
-func (es *EventStats) IncrementErrorCounter(endpoint string) {
-	switch endpoint {
-	case "StoreEventData":
-		ReqDetailCount.ErrorRequestCount++
-		es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-	case "TotalEventCountByType":
-		ReqDetailCount.TotalEventCountByTypeSuccessCnt++
-		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
-	case "TotalEventCountByCameraId":
-		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt++
-		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
-	// Add cases for other endpoints
-	default:
-		// Handle unknown endpoint
 	}
 }
 
@@ -151,26 +90,14 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 		if err := sd.StoreEventData(data); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
 
-		// ReqDetailCount.SuccessRequestCount += +1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		// ReqDetailCount.StoreEventDataSuccessCnt += 1
-		// es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
-
 		count, err := storage.GetTotalEventCount(es.RdbClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
 
 			return
 		}
@@ -181,14 +108,10 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 
 func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		now := time.Now()
 		// Get event type from query parameter
 		eventType := c.Query("eventType")
 		if eventType == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
-
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
 
 			return
 		}
@@ -198,15 +121,10 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
 		utils.Sleep(200)
-
-		es.Metrics.DurationCountByEventType.With(prometheus.Labels{"method": "GET", "status": "200"}).Observe(time.Since(now).Seconds())
 
 		// Return total count and eventType in the response
 		response := gin.H{
@@ -214,26 +132,16 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 			"total_event_count": count,
 		}
 		c.JSON(http.StatusOK, response)
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.TotalEventCountByTypeSuccessCnt += 1
-		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
 
 func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
-		now := time.Now()
 		// Get eventType from query parameter
 		cameraId := c.Query("cameraId")
 		if cameraId == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "cameraId query parameter is required"})
-
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
 
 			return
 		}
@@ -243,15 +151,10 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
 		utils.Sleep(200)
-
-		es.Metrics.DurationCountByCameraId.With(prometheus.Labels{"method": "GET", "status": "200"}).Observe(time.Since(now).Seconds())
 
 		// Return total count and eventType in the response
 		response := gin.H{
@@ -259,12 +162,6 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 			"total_event_count": count,
 		}
 		c.JSON(http.StatusOK, response)
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt += 1
-		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -276,9 +173,6 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 		if cameraId == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "cameraId query parameter is required"})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
@@ -286,9 +180,6 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 		eventCounts, err := storage.GetEventCountSummaryByCameraID(cameraId, es.RdbClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
 
 			return
 		}
@@ -299,12 +190,6 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 			"event_summary": eventCounts,
 		}
 		c.JSON(http.StatusOK, response)
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt += 1
-		es.Metrics.EventCountSummaryByCameraIdSuccess.Set(float64(ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -316,9 +201,6 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 		if eventType == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
@@ -326,9 +208,6 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 		eventCounts, err := storage.GetEventCountSummaryByEventType(eventType, es.RdbClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
 
 			return
 		}
@@ -339,12 +218,6 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 			"camera_summary": eventCounts,
 		}
 		c.JSON(http.StatusOK, response)
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt += 1
-		es.Metrics.EventCountSummaryByEventTypeSuccess.Set(float64(ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -356,9 +229,6 @@ func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
 		if cameraId == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
@@ -367,20 +237,11 @@ func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
 		// Return event summary for the given eventType
 		c.JSON(http.StatusOK, gin.H{"eventType": cameraId, "event_summary": eventSummary})
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.SummaryByCameraIdSuccessCnt += 1
-		es.Metrics.SummaryByCameraIdSuccess.Set(float64(ReqDetailCount.SummaryByCameraIdSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
@@ -392,9 +253,6 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 		if eventType == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "eventType query parameter is required"})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
@@ -403,20 +261,11 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
-			ReqDetailCount.ErrorRequestCount = ReqDetailCount.ErrorRequestCount + 1
-			es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
-
 			return
 		}
 
 		// Return event summary for the given eventType
 		c.JSON(http.StatusOK, gin.H{"eventType": eventType, "event_summary": eventSummary})
-
-		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
-
-		ReqDetailCount.SummaryByEventTypeSuccessCnt += 1
-		es.Metrics.SummaryByEventTypeSuccess.Set(float64(ReqDetailCount.SummaryByEventTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
 }
