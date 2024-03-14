@@ -78,14 +78,17 @@ func main() {
 		Handler: r,
 	}
 
+	eventStatsApis := apis.EventStats{
+		Logger:    logger,
+		RdbClient: rdbClient,
+		Cfg:       cfg,
+		Metrics:   m,
+	}
+
+	r.Use(apis.MonitoringMiddleware(cfg, eventStatsApis))
+
 	collectionEventStats := r.Group(cfg.GetString("api_path") + "eventStats")
 	{
-		eventStatsApis := apis.EventStats{
-			Logger:    logger,
-			RdbClient: rdbClient,
-			Cfg:       cfg,
-			Metrics:   m,
-		}
 		collectionEventStats.POST("/storeEventData", eventStatsApis.StoreEventData())
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
 		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())

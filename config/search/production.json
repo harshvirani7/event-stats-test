@@ -9,7 +9,13 @@
     "redis_db": 0,
     "api_path": "",
     "api": {
-        "port": 8080
+        "port": 8080,
+		"prometheus": {
+			"ignorePath": [
+			  "/health/",
+			  "/metrics/"
+			]
+		  }
     }
 }
 

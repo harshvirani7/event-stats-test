@@ -2,6 +2,8 @@ package apis
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -51,6 +53,89 @@ func init() {
 	}
 }
 
+// MonitoringMiddleware is a middleware function for monitoring HTTP requests.
+func MonitoringMiddleware(cfg config.Config, es EventStats) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := removePathParam(c.Copy())
+		for _, ignorePath := range cfg.GetStringSlice("api.prometheus.ignorePath") {
+			if path == ignorePath {
+				return
+			}
+		}
+		start := time.Now()
+
+		c.Next()
+
+		// Update metrics based on response status
+		status := strconv.Itoa(c.Writer.Status())
+		// method := c.Request.Method
+
+		// path := c.FullPath()
+
+		es.Metrics.PromHttpRespTime.With(prometheus.Labels{
+			"path": path, "status": status,
+		}).
+			Observe(time.Since(start).Seconds())
+
+		// if status >= http.StatusOK && status < http.StatusBadRequest {
+		// 	es.IncrementSuccessCounter("success")
+		// 	// switch path := c.FullPath(); path {
+		// 	// case "/eventStatsstoreEventData":
+		// 	// 	//es.IncrementSuccessCounter("StoreEventData")
+		// 	// // case "/total-event-count-by-type":
+		// 	// // 	es.IncrementSuccessCounter("TotalEventCountByType")
+		// 	// // case "/total-event-count-by-camera-id":
+		// 	// // 	es.IncrementSuccessCounter("TotalEventCountByCameraId")
+		// 	// // Add cases for other endpoints
+		// 	// default:
+		// 	// 	// Do nothing
+		// 	// }
+		// }
+		// else {
+		// 	// es.IncrementErrorCounter()
+		// }
+
+		// duration := time.Since(start).Seconds()
+
+		// es.Metrics.DurationCount.With(prometheus.Labels{"method": method, "status": http.StatusText(status)}).Observe(duration)
+	}
+}
+
+func (es *EventStats) IncrementSuccessCounter(endpoint string) {
+	switch endpoint {
+	case "StoreEventData":
+		ReqDetailCount.StoreEventDataSuccessCnt++
+		es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
+	case "TotalEventCountByType":
+		ReqDetailCount.TotalEventCountByTypeSuccessCnt++
+		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
+	case "TotalEventCountByCameraId":
+		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt++
+		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
+	// Add cases for other endpoints
+	default:
+		ReqDetailCount.SuccessRequestCount++
+		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+	}
+}
+
+func (es *EventStats) IncrementErrorCounter(endpoint string) {
+	switch endpoint {
+	case "StoreEventData":
+		ReqDetailCount.ErrorRequestCount++
+		es.Metrics.ErrorRequest.Set(float64(ReqDetailCount.ErrorRequestCount))
+	case "TotalEventCountByType":
+		ReqDetailCount.TotalEventCountByTypeSuccessCnt++
+		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
+	case "TotalEventCountByCameraId":
+		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt++
+		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
+	// Add cases for other endpoints
+	default:
+		// Handle unknown endpoint
+	}
+}
+
 func (es EventStats) StoreEventData() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
 		var data []model.Data
@@ -74,11 +159,11 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
 
-		ReqDetailCount.SuccessRequestCount += +1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount += +1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
-		ReqDetailCount.StoreEventDataSuccessCnt += 1
-		es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
+		// ReqDetailCount.StoreEventDataSuccessCnt += 1
+		// es.Metrics.StoreEventDataSuccess.Set(float64(ReqDetailCount.StoreEventDataSuccessCnt))
 
 		count, err := storage.GetTotalEventCount(es.RdbClient)
 		if err != nil {
@@ -130,8 +215,8 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, response)
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.TotalEventCountByTypeSuccessCnt += 1
 		es.Metrics.TotalEventCountByTypeSuccess.Set(float64(ReqDetailCount.TotalEventCountByTypeSuccessCnt))
@@ -175,8 +260,8 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, response)
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.TotalEventCountByCameraIdSuccessCnt += 1
 		es.Metrics.TotalEventCountByCameraIdSuccess.Set(float64(ReqDetailCount.TotalEventCountByCameraIdSuccessCnt))
@@ -215,8 +300,8 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, response)
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt += 1
 		es.Metrics.EventCountSummaryByCameraIdSuccess.Set(float64(ReqDetailCount.EventCountSummaryByCameraIdSuccessCnt))
@@ -255,8 +340,8 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 		}
 		c.JSON(http.StatusOK, response)
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt += 1
 		es.Metrics.EventCountSummaryByEventTypeSuccess.Set(float64(ReqDetailCount.EventCountSummaryByEventTypeSuccessCnt))
@@ -291,8 +376,8 @@ func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
 		// Return event summary for the given eventType
 		c.JSON(http.StatusOK, gin.H{"eventType": cameraId, "event_summary": eventSummary})
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.SummaryByCameraIdSuccessCnt += 1
 		es.Metrics.SummaryByCameraIdSuccess.Set(float64(ReqDetailCount.SummaryByCameraIdSuccessCnt))
@@ -327,11 +412,29 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 		// Return event summary for the given eventType
 		c.JSON(http.StatusOK, gin.H{"eventType": eventType, "event_summary": eventSummary})
 
-		ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
-		es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
+		// ReqDetailCount.SuccessRequestCount = ReqDetailCount.SuccessRequestCount + 1
+		// es.Metrics.SuccessRequest.Set(float64(ReqDetailCount.SuccessRequestCount))
 
 		ReqDetailCount.SummaryByEventTypeSuccessCnt += 1
 		es.Metrics.SummaryByEventTypeSuccess.Set(float64(ReqDetailCount.SummaryByEventTypeSuccessCnt))
 	}
 	return gin.HandlerFunc(fn)
+}
+
+func removePathParam(c *gin.Context) string {
+	var newPath string
+	for _, str := range strings.Split(c.Request.URL.Path, "/") {
+		found := false
+		for _, paramValue := range c.Params {
+			if str == paramValue.Value {
+				newPath = newPath + "*/"
+				found = true
+				break
+			}
+		}
+		if !found {
+			newPath = newPath + str + "/"
+		}
+	}
+	return newPath
 }

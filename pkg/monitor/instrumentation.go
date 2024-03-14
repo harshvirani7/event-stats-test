@@ -18,6 +18,7 @@ type Metrics struct {
 	EventCountSummaryByEventTypeSuccess prometheus.Gauge
 	SummaryByCameraIdSuccess            prometheus.Gauge
 	SummaryByEventTypeSuccess           prometheus.Gauge
+	PromHttpRespTime                    *prometheus.HistogramVec
 }
 
 func NewMetrics(promCamRegistry prometheus.Registerer) *Metrics {
@@ -90,6 +91,13 @@ func NewMetrics(promCamRegistry prometheus.Registerer) *Metrics {
 			Name:      "summary_by_event_type_success_count",
 			Help:      "Total no of SummaryByEventType success requests.",
 		}),
+		PromHttpRespTime: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: "myapp",
+			Name:      "vsapi_http_response_time",
+			Help:      "Duration of HTTP requests.",
+			Buckets:   prometheus.LinearBuckets(0.6, 3, 15),
+		},
+			[]string{"path", "status"}),
 	}
 	promCamRegistry.MustRegister(
 		m.EventCount,
@@ -105,6 +113,7 @@ func NewMetrics(promCamRegistry prometheus.Registerer) *Metrics {
 		m.EventCountSummaryByCameraIdSuccess,
 		m.SummaryByEventTypeSuccess,
 		m.SummaryByCameraIdSuccess,
+		m.PromHttpRespTime,
 	)
 	return m
 }

@@ -57,3 +57,8 @@ func (cfg Config) GetInt(key string) int {
 func (cfg Config) GetString(key string) string {
 	return cfg.viper.GetString(key)
 }
+
+// GetStringSlice fetches the value with the afformentioned type
+func (cfg Config) GetStringSlice(key string) []string {
+	return cfg.viper.GetStringSlice(key)
+}
