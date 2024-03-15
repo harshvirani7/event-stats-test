@@ -17,36 +17,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type RequestDetailCount struct {
-	StoreEventDataSuccessCnt               int `json:"storeEventDataSuccessCnt"`
-	TotalEventCountByTypeSuccessCnt        int `json:"totalEventCountByTypeSuccessCnt"`
-	TotalEventCountByCameraIdSuccessCnt    int `json:"totalEventCountByCameraIdSuccessCnt"`
-	EventCountSummaryByCameraIdSuccessCnt  int `json:"eventCountSummaryByCameraIdSuccessCnt"`
-	EventCountSummaryByEventTypeSuccessCnt int `json:"eventCountSummaryByEventTypeSuccessCnt"`
-	SummaryByCameraIdSuccessCnt            int `json:"summaryByCameraIdSuccessCnt"`
-	SummaryByEventTypeSuccessCnt           int `json:"summaryByEventTypeSuccessCnt"`
-}
-
-var ReqDetailCount RequestDetailCount
-
 type EventStats struct {
 	Logger    *zap.SugaredLogger
 	RdbClient *cache.Redis
 	Cfg       config.Config
 	Metrics   *monitor.Metrics
-}
-
-func init() {
-
-	ReqDetailCount = RequestDetailCount{
-		StoreEventDataSuccessCnt:               0,
-		TotalEventCountByTypeSuccessCnt:        0,
-		TotalEventCountByCameraIdSuccessCnt:    0,
-		EventCountSummaryByEventTypeSuccessCnt: 0,
-		EventCountSummaryByCameraIdSuccessCnt:  0,
-		SummaryByEventTypeSuccessCnt:           0,
-		SummaryByCameraIdSuccessCnt:            0,
-	}
 }
 
 // MonitoringMiddleware is a middleware function for monitoring HTTP requests.
@@ -65,8 +40,6 @@ func MonitoringMiddleware(cfg config.Config, es EventStats) gin.HandlerFunc {
 		// Update metrics based on response status
 		status := strconv.Itoa(c.Writer.Status())
 		// method := c.Request.Method
-
-		// path := c.FullPath()
 
 		es.Metrics.PromHttpRespTime.With(prometheus.Labels{
 			"path": path, "status": status,
