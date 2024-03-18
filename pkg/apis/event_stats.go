@@ -2,9 +2,7 @@ package apis
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/model"
@@ -13,7 +11,6 @@ import (
 	"github.com/harshvirani7/event-stats-test/pkg/monitor"
 	"github.com/harshvirani7/event-stats-test/pkg/storage"
 	"github.com/harshvirani7/event-stats-test/utils"
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
 
@@ -22,30 +19,6 @@ type EventStats struct {
 	RdbClient *cache.Redis
 	Cfg       config.Config
 	Metrics   *monitor.Metrics
-}
-
-// MonitoringMiddleware is a middleware function for monitoring HTTP requests.
-func MonitoringMiddleware(cfg config.Config, es EventStats) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		path := removePathParam(c.Copy())
-		for _, ignorePath := range cfg.GetStringSlice("api.prometheus.ignorePath") {
-			if path == ignorePath {
-				return
-			}
-		}
-		start := time.Now()
-
-		c.Next()
-
-		// Update metrics based on response status
-		status := strconv.Itoa(c.Writer.Status())
-		// method := c.Request.Method
-
-		es.Metrics.PromHttpRespTime.With(prometheus.Labels{
-			"path": path, "status": status,
-		}).
-			Observe(time.Since(start).Seconds())
-	}
 }
 
 func (es EventStats) StoreEventData() gin.HandlerFunc {
@@ -243,7 +216,7 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 	return gin.HandlerFunc(fn)
 }
 
-func removePathParam(c *gin.Context) string {
+func RemovePathParam(c *gin.Context) string {
 	var newPath string
 	for _, str := range strings.Split(c.Request.URL.Path, "/") {
 		found := false

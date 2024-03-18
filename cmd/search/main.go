@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,30 @@ var version string
 
 func init() {
 	version = "1.0.1"
+}
+
+// MonitoringMiddleware is a middleware function for monitoring HTTP requests.
+func MonitoringMiddleware(cfg config.Config, es apis.EventStats) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := apis.RemovePathParam(c.Copy())
+		for _, ignorePath := range cfg.GetStringSlice("api.prometheus.ignorePath") {
+			if path == ignorePath {
+				return
+			}
+		}
+		start := time.Now()
+
+		c.Next()
+
+		// Update metrics based on response status
+		status := strconv.Itoa(c.Writer.Status())
+		// method := c.Request.Method
+
+		es.Metrics.PromHttpRespTime.With(prometheus.Labels{
+			"path": path, "status": status,
+		}).
+			Observe(time.Since(start).Seconds())
+	}
 }
 
 func main() {
@@ -85,7 +110,7 @@ func main() {
 		Metrics:   m,
 	}
 
-	r.Use(apis.MonitoringMiddleware(cfg, eventStatsApis))
+	r.Use(MonitoringMiddleware(cfg, eventStatsApis))
 
 	collectionEventStats := r.Group(cfg.GetString("api_path") + "eventStats")
 	{
