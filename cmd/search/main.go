@@ -7,12 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/pkg/apis"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 	config "github.com/harshvirani7/event-stats-test/pkg/config"
+	"github.com/harshvirani7/event-stats-test/pkg/monitor"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -22,6 +26,36 @@ const (
 	dbReconnectRetries      = 5
 	redisReconnectRetries   = 5
 )
+
+var version string
+
+func init() {
+	version = "1.0.1"
+}
+
+// MonitoringMiddleware is a middleware function for monitoring HTTP requests.
+func MonitoringMiddleware(cfg config.Config, es apis.EventStats) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := apis.RemovePathParam(c.Copy())
+		for _, ignorePath := range cfg.GetStringSlice("api.prometheus.ignorePath") {
+			if path == ignorePath {
+				return
+			}
+		}
+		start := time.Now()
+
+		c.Next()
+
+		// Update metrics based on response status
+		status := strconv.Itoa(c.Writer.Status())
+		// method := c.Request.Method
+
+		es.Metrics.PromHttpRespTime.With(prometheus.Labels{
+			"path": path, "status": status,
+		}).
+			Observe(time.Since(start).Seconds())
+	}
+}
 
 func main() {
 	cfg, err := config.Load(
@@ -57,6 +91,11 @@ func main() {
 		logger.Infof("Redis connection established, addr: %v", addr)
 	}
 
+	PromCamRegistry := prometheus.NewRegistry()
+	m := monitor.NewMetrics(PromCamRegistry)
+
+	m.Info.With(prometheus.Labels{"version": version}).Set(1)
+
 	// Set up API service routes and controller
 	r := gin.Default()
 	httpServer := &http.Server{
@@ -64,9 +103,17 @@ func main() {
 		Handler: r,
 	}
 
+	eventStatsApis := apis.EventStats{
+		Logger:    logger,
+		RdbClient: rdbClient,
+		Cfg:       cfg,
+		Metrics:   m,
+	}
+
+	r.Use(MonitoringMiddleware(cfg, eventStatsApis))
+
 	collectionEventStats := r.Group(cfg.GetString("api_path") + "eventStats")
 	{
-		eventStatsApis := apis.EventStats{Logger: logger, RdbClient: rdbClient, Cfg: cfg}
 		collectionEventStats.POST("/storeEventData", eventStatsApis.StoreEventData())
 		collectionEventStats.GET("/totalEventCountByEventType", eventStatsApis.TotalEventCountByType())
 		collectionEventStats.GET("/totalEventCountByCameraId", eventStatsApis.TotalEventCountByCameraId())
@@ -75,6 +122,14 @@ func main() {
 		collectionEventStats.GET("/SummaryByCameraId", eventStatsApis.SummaryByCameraId())
 		collectionEventStats.GET("/SummaryByEventType", eventStatsApis.SummaryByEventType())
 	}
+
+	r.GET(cfg.GetString("api_path")+"health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Ok",
+		})
+	})
+
+	r.GET(cfg.GetString("api_path")+"metrics", prometheusHandler(PromCamRegistry))
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
@@ -122,5 +177,12 @@ func exitOnNil(object interface{}, message string) {
 	if object == nil {
 		fmt.Fprintf(os.Stderr, "%+v", message)
 		os.Exit(1)
+	}
+}
+
+func prometheusHandler(reg *prometheus.Registry) gin.HandlerFunc {
+	promHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{})
+	return func(c *gin.Context) {
+		promHandler.ServeHTTP(c.Writer, c.Request)
 	}
 }
