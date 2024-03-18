@@ -186,13 +186,3 @@ func prometheusHandler(reg *prometheus.Registry) gin.HandlerFunc {
 		promHandler.ServeHTTP(c.Writer, c.Request)
 	}
 }
-
-// Metrics
-// no. of events added
-// count of total cameras
-
-// total requests made
-// average latency
-// no of successfull and fail requests
-
-// rate of request for all the endpoints in one graph - number and chart

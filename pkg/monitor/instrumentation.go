@@ -39,5 +39,3 @@ func NewMetrics(promCamRegistry prometheus.Registerer) *Metrics {
 	)
 	return m
 }
-
-// response time for 2xx and 4xx
