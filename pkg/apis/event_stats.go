@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/model"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
@@ -19,6 +20,7 @@ type EventStats struct {
 	RdbClient *cache.Redis
 	Cfg       config.Config
 	Metrics   *monitor.Metrics
+	EsClient  *elasticsearch.Client
 }
 
 func (es EventStats) StoreEventData() gin.HandlerFunc {
@@ -30,12 +32,19 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 		}
 		sd := storage.StoreDataAPI{
 			RdbClient: es.RdbClient,
+			EsClient:  es.EsClient,
 		}
 		// Store events into Redis
 		// change this to call from a struct
 		if err := sd.StoreEventData(data); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
+			return
+		}
+
+		// Store events into Elasticsearch
+		if err := sd.StoreInElasticsearch(data); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 

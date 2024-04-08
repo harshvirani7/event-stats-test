@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
 	"github.com/harshvirani7/event-stats-test/pkg/apis"
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
@@ -68,7 +69,6 @@ func main() {
 	)
 	exitOn(err)
 
-	// Error handling channel to be passed to all services
 	errs := make(chan error)
 
 	logLevel, logger := setupLogger()
@@ -80,27 +80,22 @@ func main() {
 		gin.DefaultWriter = ioutil.Discard
 	}
 
-	addr := cfg.GetString("redis_addr")
-	var rdbClient *cache.Redis
-
-	rdbClient = cache.NewRedis(addr, cfg.GetString("redis_password"), cfg.GetInt("redis_db"), logger, cfg.GetInt("redis_timeout"))
-
-	if rdbClient == nil {
-		exitOnNil(rdbClient, "Failed to setup redis connection")
-	} else {
-		logger.Infof("Redis connection established, addr: %v", addr)
-	}
+	rdbClient := initializeRedisClient(cfg, logger)
 
 	PromCamRegistry := prometheus.NewRegistry()
-	m := monitor.NewMetrics(PromCamRegistry)
 
-	m.Info.With(prometheus.Labels{"version": version}).Set(1)
+	m := initializeMetrics(PromCamRegistry)
 
-	// Set up API service routes and controller
 	r := gin.Default()
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.GetInt("api.port")),
 		Handler: r,
+	}
+
+	// Initialize Elasticsearch client...
+	esClient, err := initializeElasticsearchClient(cfg, logger)
+	if err != nil {
+		panic(err)
 	}
 
 	eventStatsApis := apis.EventStats{
@@ -108,6 +103,7 @@ func main() {
 		RdbClient: rdbClient,
 		Cfg:       cfg,
 		Metrics:   m,
+		EsClient:  esClient,
 	}
 
 	r.Use(MonitoringMiddleware(cfg, eventStatsApis))
@@ -151,6 +147,36 @@ func main() {
 	}
 
 	logger.Info("API Server Exiting")
+}
+
+func initializeElasticsearchClient(cfg config.Config, logger *zap.SugaredLogger) (*elasticsearch.Client, error) {
+	esCfg := elasticsearch.Config{
+		Addresses: []string{cfg.GetString("elasticsearch_url")},
+	}
+	esClient, err := elasticsearch.NewClient(esCfg)
+	if err != nil {
+		return nil, err
+	}
+	logger.Info("Elasticsearch connection established")
+	return esClient, nil
+}
+
+func initializeRedisClient(cfg config.Config, logger *zap.SugaredLogger) *cache.Redis {
+	addr := cfg.GetString("redis_addr")
+	rdbClient := cache.NewRedis(addr, cfg.GetString("redis_password"), cfg.GetInt("redis_db"), logger, cfg.GetInt("redis_timeout"))
+
+	if rdbClient == nil {
+		exitOnNil(rdbClient, "Failed to setup redis connection")
+	} else {
+		logger.Infof("Redis connection established, addr: %v", addr)
+	}
+	return rdbClient
+}
+
+func initializeMetrics(PromCamRegistry *prometheus.Registry) *monitor.Metrics {
+	m := monitor.NewMetrics(PromCamRegistry)
+	m.Info.With(prometheus.Labels{"version": version}).Set(1)
+	return m
 }
 
 func setupLogger() (zap.AtomicLevel, *zap.SugaredLogger) {
