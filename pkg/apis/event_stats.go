@@ -34,13 +34,11 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 			RdbClient: es.RdbClient,
 			EsClient:  es.EsClient,
 		}
-		// Store events into Redis
-		// change this to call from a struct
-		if err := sd.StoreEventData(data); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
-			return
-		}
+		// // Store events into Redis
+		// if err := sd.StoreEventData(data); err != nil {
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// 	return
+		// }
 
 		// Store events into Elasticsearch
 		if err := sd.StoreInElasticsearch(data); err != nil {
@@ -50,7 +48,8 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 
 		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
 
-		count, err := storage.GetTotalEventCount(es.RdbClient)
+		// count, err := storage.GetTotalEventCount(es.RdbClient)
+		count, err := storage.GetTotalEventCountES(es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -72,10 +71,10 @@ func (es EventStats) TotalEventCountByType() gin.HandlerFunc {
 		}
 
 		// Get total event count for the given event type
-		count, err := storage.GetTotalEventCountByType(eventType, es.RdbClient)
+		// count, err := storage.GetTotalEventCountByType(eventType, es.RdbClient)
+		count, err := storage.GetTotalEventCountByTypeES(eventType, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
 			return
 		}
 
@@ -102,7 +101,8 @@ func (es EventStats) TotalEventCountByCameraId() gin.HandlerFunc {
 		}
 
 		// Get total event count for each cameraid for the given eventType
-		count, err := storage.GetEventCountByCameraID(cameraId, es.RdbClient)
+		// count, err := storage.GetEventCountByCameraID(cameraId, es.RdbClient)
+		count, err := storage.GetEventCountByCameraIDES(cameraId, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -132,10 +132,10 @@ func (es EventStats) EventCountSummaryByCameraId() gin.HandlerFunc {
 		}
 
 		// Get event counts for the given cameraId from Redis
-		eventCounts, err := storage.GetEventCountSummaryByCameraID(cameraId, es.RdbClient)
+		// eventCounts, err := storage.GetEventCountSummaryByCameraID(cameraId, es.RdbClient)
+		eventCounts, err := storage.GetEventCountSummaryByCameraIDES(cameraId, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
 			return
 		}
 
@@ -160,10 +160,10 @@ func (es EventStats) EventCountSummaryByEventType() gin.HandlerFunc {
 		}
 
 		// Get total camera event counts for the given eventType from Redis
-		eventCounts, err := storage.GetEventCountSummaryByEventType(eventType, es.RdbClient)
+		// eventCounts, err := storage.GetEventCountSummaryByEventType(eventType, es.RdbClient)
+		eventCounts, err := storage.GetEventCountSummaryByEventTypeES(eventType, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-
 			return
 		}
 
@@ -188,7 +188,8 @@ func (es EventStats) SummaryByCameraId() gin.HandlerFunc {
 		}
 
 		// Get event summary for the given eventType from Redis
-		eventSummary, err := storage.GetEventSummaryByCameraID(cameraId, es.RdbClient)
+		// eventSummary, err := storage.GetEventSummaryByCameraID(cameraId, es.RdbClient)
+		eventSummary, err := storage.GetEventSummaryByCameraIDES(cameraId, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
@@ -212,7 +213,8 @@ func (es EventStats) SummaryByEventType() gin.HandlerFunc {
 		}
 
 		// Get event summary for the given eventType from Redis
-		eventSummary, err := storage.GetEventSummaryByEventType(eventType, es.RdbClient)
+		// eventSummary, err := storage.GetEventSummaryByEventType(eventType, es.RdbClient)
+		eventSummary, err := storage.GetEventSummaryByEventTypeES(eventType, es.EsClient)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 
