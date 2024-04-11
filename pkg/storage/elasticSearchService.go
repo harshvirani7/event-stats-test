@@ -105,7 +105,6 @@ func GetEventCountByCameraIDES(cameraId string, esClient *elasticsearch.Client) 
 }
 
 func GetEventCountSummaryByCameraIDES(cameraId string, esClient *elasticsearch.Client) (map[string]int64, error) {
-	// Create a query to retrieve documents with the given cameraID
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"term": map[string]interface{}{
@@ -246,7 +245,6 @@ func GetTotalEventCountES(esClient *elasticsearch.Client) (int, error) {
 }
 
 func executeElasticsearchQuery(query map[string]interface{}, indexName string, esClient *elasticsearch.Client) (map[string]interface{}, error) {
-	// Encode the query as JSON
 	queryBytes, err := json.Marshal(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode query: %v", err)
