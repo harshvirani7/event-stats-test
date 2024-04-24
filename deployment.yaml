@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 637
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.40.4
+          ports:
+            - containerPort: 9090
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:9.3.0
+          ports:
+            - containerPort: 3000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-stats-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-stats-test
+  template:
+    metadata:
+      labels:
+        app: event-stats-test
+    spec:
+      containers:
+        - name: event-stats-test
+          image: harshvirani7/event-stats-test_app:latest
+          ports:
+            - containerPort: 8080
+
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: eventstats
+spec:
+  version: 8.13.2
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: false
+
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: eventstats
+spec:
+  version: 8.13.2
+  count: 1
+  elasticsearchRef:
+    name: eventstats
+
+---
+# apiVersion: elasticsearch.k8s.elastic.co/v1
+# kind: Deployment
+# metadata:
+#   name: elasticsearch
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: elasticsearch
+#   template:
+#     metadata:
+#       labels:
+#         app: elasticsearch
+#     spec:
+#       containers:
+#         - name: elasticsearch
+#           image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+#           ports:
+#             - containerPort: 9200
+#       # Add volume mounts and other configurations as needed
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: kibana
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: kibana
+#   template:
+#     metadata:
+#       labels:
+#         app: kibana
+#     spec:
+#       containers:
+#         - name: kibana
+#           image: docker.elastic.co/kibana/kibana:7.16.2
+#           ports:
+#             - containerPort: 5601
