@@ -86,7 +86,7 @@ kind: Elasticsearch
 metadata:
   name: eventstats
 spec:
-  version: 8.13.2
+  version: 8.13.4
   nodeSets:
     - name: default
       count: 1
@@ -99,12 +99,37 @@ kind: Kibana
 metadata:
   name: eventstats
 spec:
-  version: 8.13.2
+  version: 8.13.4
   count: 1
   elasticsearchRef:
     name: eventstats
 
 ---
+
+# kubectl apply -f es-deployment.yaml
+
+# kubectl create -f https://download.elastic.co/downloads/eck/2.12.1/crds.yaml
+
+# kubectl apply -f https://download.elastic.co/downloads/eck/2.12.1/operator.yaml
+
+# kubectl get elasticsearch
+
+# kubectl get pods --selector='elasticsearch.k8s.elastic.co/cluster-name=eventstats'
+
+# kubectl get service eventstats-es-http
+
+# PASSWORD=$(kubectl get secret eventstats-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
+
+# curl -u "elastic:$PASSWORD" -k "https://eventstats-es-http:9200"
+
+# kubectl port-forward service/eventstats-es-http 9200
+
+# curl -u "elastic:$PASSWORD" -k "https://localhost:9200"
+
+
+# rename - eventstats-es-default
+
+
 # apiVersion: elasticsearch.k8s.elastic.co/v1
 # kind: Deployment
 # metadata:
