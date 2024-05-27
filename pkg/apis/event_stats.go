@@ -46,8 +46,6 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
-
 		// TODO: check the data
 		// count, err := storage.GetTotalEventCount(es.RdbClient)
 		count, err := storage.GetTotalEventCountES(es.EsClient)
@@ -57,6 +55,8 @@ func (es EventStats) StoreEventData() gin.HandlerFunc {
 			return
 		}
 		es.Metrics.EventCount.Set(float64(count))
+
+		c.JSON(http.StatusOK, gin.H{"message": "Event data stored successfully"})
 	}
 	return gin.HandlerFunc(fn)
 }
