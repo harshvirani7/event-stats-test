@@ -17,7 +17,7 @@
 			]
 		  }
     },
-	"elasticsearch_url": "https://eventstats-es-default-0:9200"
+	"elasticsearch_url": "http://eventstats-es-default-0:9200"
 }
 
 
