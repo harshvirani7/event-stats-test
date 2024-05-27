@@ -76,7 +76,7 @@ spec:
     spec:
       containers:
         - name: event-stats-test
-          image: harshvirani7/event-stats-test_app:latest
+          image: harshvirani7/event-stats-test_app:kubetest
           ports:
             - containerPort: 8080
 
