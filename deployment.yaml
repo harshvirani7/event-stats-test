@@ -81,17 +81,17 @@ spec:
             - containerPort: 8080
 
 ---
-apiVersion: elasticsearch.k8s.elastic.co/v1
-kind: Elasticsearch
-metadata:
-  name: eventstats
-spec:
-  version: 8.13.4
-  nodeSets:
-    - name: default
-      count: 1
-      config:
-        node.store.allow_mmap: false
+# apiVersion: elasticsearch.k8s.elastic.co/v1
+# kind: Elasticsearch
+# metadata:
+#   name: eventstats
+# spec:
+#   version: 8.13.4
+#   nodeSets:
+#     - name: default
+#       count: 1
+#       config:
+#         node.store.allow_mmap: false
 
 ---
 apiVersion: kibana.k8s.elastic.co/v1
@@ -102,7 +102,7 @@ spec:
   version: 8.13.4
   count: 1
   elasticsearchRef:
-    name: eventstats
+    name: elasticsearch
 
 ---
 
@@ -176,3 +176,10 @@ spec:
 #           image: docker.elastic.co/kibana/kibana:7.16.2
 #           ports:
 #             - containerPort: 5601
+
+# docker build -t harshvirani7/event-stats-test_app:kubetest1 .
+
+# docker tag event-stats-test_app harshvirani7/event-stats-test_app:kubetest1
+
+# docker push harshvirani7/event-stats-test_app:kubetest1
+
