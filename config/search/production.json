@@ -17,7 +17,7 @@
 			]
 		  }
     },
-	"elasticsearch_url": "http://eventstats-es-http:9200"
+	"elasticsearch_url": "http://elasticsearch:9200"
 }
 
 
