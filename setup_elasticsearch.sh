@@ -1,19 +1,18 @@
 #!/bin/bash
 
-# Set up the CRDs required by ECK
-echo "Creating CRDs for ECK..."
-kubectl create -f https://download.elastic.co/downloads/eck/2.12.1/crds.yaml
+echo "Deploying Elasticsearch..."
+kubectl apply -f elasticsearch-deployment.yaml
 
-# Deploy the ECK operator
-echo "Deploying the ECK operator..."
-kubectl apply -f https://download.elastic.co/downloads/eck/2.12.1/operator.yaml
+echo "Deploying Kibana..."
+kubectl apply -f kibana-deployment.yaml
 
-# Wait for the ECK operator to be ready
-echo "Waiting for the ECK operator to be ready..."
-kubectl wait --for=condition=available --timeout=600s deployment/elastic-operator -n elastic-system
-
-# Deploy Elasticsearch cluster
-echo "Deploying Elasticsearch cluster..."
+echo "Deploying EventStats and other services..."
 kubectl apply -f deployment.yaml
 
-echo "Elasticsearch setup completed."
+kubectl apply -f service.yaml
+
+echo "Setup complete"
+
+# kubectl port-forward service/elasticsearch 9200:9200
+
+# kubectl port-forward service/event-stats-test 8080:8080 
