@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -150,8 +151,13 @@ func main() {
 }
 
 func initializeElasticsearchClient(cfg config.Config, logger *zap.SugaredLogger) (*elasticsearch.Client, error) {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	esCfg := elasticsearch.Config{
 		Addresses: []string{cfg.GetString("ELASTICSEARCH_URL")},
+		Transport: transport,
 	}
 	esClient, err := elasticsearch.NewClient(esCfg)
 	if err != nil {
