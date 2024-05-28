@@ -160,7 +160,7 @@ func initializeElasticsearchClient(cfg config.Config, logger *zap.SugaredLogger)
 
 	_, err = esClient.Ping()
 	if err != nil {
-		logger.Infof("Elasticsearch connection issue, url: ", cfg.GetString("ELASTICSEARCH_URL"))
+		logger.Infof("Elasticsearch connection issue, url: %v", cfg.GetString("ELASTICSEARCH_URL"))
 		// return nil, err
 	} else {
 		logger.Info("Elasticsearch connection established")
