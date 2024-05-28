@@ -108,6 +108,8 @@ spec:
 
 # kubectl apply -f es-deployment.yaml
 
+# kubectl apply -f deployment.yaml
+
 # kubectl create -f https://download.elastic.co/downloads/eck/2.12.1/crds.yaml
 
 # kubectl apply -f https://download.elastic.co/downloads/eck/2.12.1/operator.yaml
@@ -126,6 +128,9 @@ spec:
 
 # curl -u "elastic:$PASSWORD" -k "https://localhost:9200"
 
+# docker tag event-stats-test_app harshvirani7/event-stats-test_app:kubetest
+
+# docker push harshvirani7/event-stats-test_app:kubetest
 
 # rename - eventstats-es-default
 
