@@ -1,15 +1,51 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "event-stats-chart.fullname" . }}
-  labels:
-    {{- include "event-stats-chart.labels" . | nindent 4 }}
+  name: event-stats-test
 spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
   selector:
-    {{- include "event-stats-chart.selectorLabels" . | nindent 4 }}
+    app: event-stats-test
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.eventStats.containerPort }}
+      targetPort: {{ .Values.eventStats.containerPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: {{ .Values.redis.containerPort }}
+      targetPort: {{ .Values.redis.containerPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.prometheus.containerPort }}
+      targetPort: {{ .Values.prometheus.containerPort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      protocol: TCP
+      port: {{ .Values.grafana.containerPort }}
+      targetPort: {{ .Values.grafana.containerPort }}
