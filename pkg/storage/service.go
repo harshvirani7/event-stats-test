@@ -10,24 +10,6 @@ import (
 	"github.com/harshvirani7/event-stats-test/pkg/cache"
 )
 
-type ServiceInterface interface {
-	StoreEventData(events []model.Data) error
-}
-
-type StoreDataAPI struct {
-	RdbClient *cache.Redis
-}
-
-type EventTypeSummary struct {
-	CameraID  string `json:"cameraId"`
-	Timestamp string `json:"timestamp"`
-}
-
-type CameraSummary struct {
-	EventType string `json:"eventType"`
-	Timestamp string `json:"timestamp"`
-}
-
 // StoreEventData stores the event Data in a formatted way in redis with a combination of cameraID, timestmap and eventType
 func (sd StoreDataAPI) StoreEventData(events []model.Data) error {
 	ctx := context.Background()
@@ -78,7 +60,7 @@ func GetEventCountSummaryByCameraID(cameraId string, rdbClient *cache.Redis) (ma
 	for _, key := range keys {
 		parts := strings.Split(key, "_")
 		if len(parts) != 3 {
-			continue // Skip if the key format is invalid
+			continue
 		}
 		eventType := parts[2]
 
@@ -99,7 +81,7 @@ func GetEventCountSummaryByEventType(eventType string, rdbClient *cache.Redis) (
 	for _, key := range keys {
 		parts := strings.Split(key, "_")
 		if len(parts) != 3 {
-			continue // Skip if the key format is invalid
+			continue
 		}
 		cameraId := parts[0]
 
@@ -120,7 +102,7 @@ func GetEventSummaryByCameraID(cameraId string, rdbClient *cache.Redis) ([]Camer
 	for _, key := range keys {
 		parts := strings.Split(key, "_")
 		if len(parts) != 3 {
-			continue // Skip if the key format is invalid
+			continue
 		}
 		eventType := parts[2]
 		timestamp := parts[1]
@@ -143,7 +125,7 @@ func GetEventSummaryByEventType(eventType string, rdbClient *cache.Redis) ([]Eve
 	for _, key := range keys {
 		parts := strings.Split(key, "_")
 		if len(parts) != 3 {
-			continue // Skip if the key format is invalid
+			continue
 		}
 		cameraId := parts[0]
 		timestamp := parts[1]
@@ -159,9 +141,8 @@ func GetTotalEventCount(rdbClient *cache.Redis) (int, error) {
 	ctx := context.Background()
 	keys, err := rdbClient.Scan(ctx, "")
 	if err != nil {
-		return 0, fmt.Errorf("Error fetching keys: %v", err)
+		return 0, fmt.Errorf("error fetching keys: %v", err)
 	}
 
-	// Count the number of keys.
 	return len(keys), nil
 }

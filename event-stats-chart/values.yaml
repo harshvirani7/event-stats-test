@@ -1,0 +1,31 @@
+eventStats:
+  replicas: 1
+  image: harshvirani7/event-stats-test_app:kubetest1
+  containerPort: 8080
+
+redis:
+  replicas: 1
+  image: redis:latest
+  containerPort: 6379
+
+prometheus:
+  replicas: 1
+  image: prom/prometheus:v2.40.4
+  containerPort: 9090
+
+grafana:
+  replicas: 1
+  image: grafana/grafana:9.3.0
+  containerPort: 3000
+
+elasticsearch:
+  replicas: 1
+  image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+  containerPort: 9200
+  transportPort: 9300
+
+kibana:
+  replicas: 1
+  image: docker.elastic.co/kibana/kibana:8.13.4
+  containerPort: 5601
+  elasticsearchHost: http://elasticsearch:9200

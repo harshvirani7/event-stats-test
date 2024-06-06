@@ -1,0 +1,4 @@
+apiVersion: v2
+name: event-stats-chart
+description: A Helm chart for Kubernetes
+version: 0.1.0
