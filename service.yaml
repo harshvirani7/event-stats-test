@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-stats-test
+spec:
+  selector:
+    app: event-stats-test
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  selector:
+    app: grafana
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  - port: 9300
+    targetPort: 9300
+    name: transport
+    
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: elasticsearch
+# spec:
+#   selector:
+#     app: elasticsearch
+#   ports:
+#     - name: http
+#       protocol: TCP
+#       port: 9200
+#       targetPort: 9200
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kibana
+# spec:
+#   selector:
+#     app: kibana
+#   ports:
+#     - name: http
+#       protocol: TCP
+#       port: 5601
+#       targetPort: 5601
+---

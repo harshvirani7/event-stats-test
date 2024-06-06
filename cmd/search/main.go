@@ -151,13 +151,20 @@ func main() {
 
 func initializeElasticsearchClient(cfg config.Config, logger *zap.SugaredLogger) (*elasticsearch.Client, error) {
 	esCfg := elasticsearch.Config{
-		Addresses: []string{cfg.GetString("elasticsearch_url")},
+		Addresses: []string{cfg.GetString("ELASTICSEARCH_URL")},
 	}
 	esClient, err := elasticsearch.NewClient(esCfg)
 	if err != nil {
 		return nil, err
 	}
-	logger.Info("Elasticsearch connection established")
+
+	_, err = esClient.Ping()
+	if err != nil {
+		logger.Infof("Elasticsearch connection issue, url: %v", cfg.GetString("ELASTICSEARCH_URL"))
+		// return nil, err
+	} else {
+		logger.Info("Elasticsearch connection established")
+	}
 	return esClient, nil
 }
 

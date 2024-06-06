@@ -24,7 +24,7 @@ func (sd StoreDataAPI) StoreInElasticsearch(data []model.Data) error {
 		}
 
 		request := esutil.BulkIndexerItem{
-			Action:     "index",
+			Action:     "create",
 			DocumentID: d.Unique,
 			Body:       bytes.NewReader(jsonData),
 			OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, resp esutil.BulkIndexerResponseItem, err error) {
