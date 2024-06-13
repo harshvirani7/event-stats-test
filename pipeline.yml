@@ -4,6 +4,11 @@ resource_types:
     source:
       repository: alpine/helm
       tag: "3.5.2"
+  - name: k8s
+    type: docker-image
+    source:
+      repository: pelotech/k8s-resource
+      tag: "v0.9.0"k
 
 resources:
   - name: event-stats-chart
@@ -11,11 +16,17 @@ resources:
     source:
       uri: "https://github.com/harshvirani7/event-stats-test.git"
       branch: main
+  - name: k8s-cluster
+    type: k8s
+    source:
+      kubeconfig: ((kubeconfig))
 
 jobs:
-  - name: deploy-helm-chart
+  - name: deploy-helm-chart // deploy event stats
     plan:
       - get: event-stats-chart
+        trigger: true
+      - get: k8s-cluster
         trigger: true
       - task: deploy-helm
         config:
@@ -32,5 +43,6 @@ jobs:
             args:
               - -exc
               - |
+                export KUBECONFIG=k8s-cluster/kubeconfig/config
                 helm repo add stable https://charts.helm.sh/stable
                 helm upgrade --install event-stats-chart event-stats-chart/event-stats-chart-0.1.0.tgz --namespace default
