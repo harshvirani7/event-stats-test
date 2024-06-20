@@ -1,0 +1,73 @@
+cluster_defaults: &cluster_defaults
+    stable_repo: "https://charts.helm.sh/stable"
+    cluster_ca: ((kubernetes.cluster_ca))
+    admin_cert: ((kubernetes.admin_cert))
+    admin_key: ((kubernetes.admin_key)) #
+    helm_history_max: 20
+
+resource_types:
+  - name: helm
+    type: docker-image
+    source:
+        repository: typositoire/concourse-helm3-resource
+        tag: v1.16.0
+  
+resources:
+  - name: git-repo
+    type: git
+    source:
+      uri: "https://github.com/harshvirani7/event-stats-test.git"
+      branch: feature-es
+  - name: test
+    type: helm
+    source:
+        cluster_url: https://cluster.test.eencloud.com:6443
+        <<: *cluster_defaults
+
+jobs:
+  - name: build
+    plan:
+      - get: git-repo
+        trigger: true
+      - task: list-git-repo-contents
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: busybox
+          inputs:
+            - name: git-repo
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                echo "Listing contents of git-repo directory:"
+                ls -la git-repo
+      - task: check-directory
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: busybox
+          inputs:
+            - name: git-repo
+          run:
+            path: sh
+            args:
+              - -exc
+              - |
+                echo "Listing contents of git-repo:"
+                ls -la git-repo
+                echo "Checking if event-stats-chart exists:"
+                if [ -d "git-repo/event-stats-chart" ]; then
+                  echo "event-stats-chart directory found."
+                else
+                  echo "event-stats-chart directory not found."
+                  exit 1
+                fi
+      - put: test
+        params:
+          chart: git-repo/event-stats-chart  
